@@ -1,0 +1,83 @@
+
+
+name = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+integer = @{ "_"? ~ ASCII_DIGIT+ }
+float = @{ "_"? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* }
+string = @{PUSH("\"" | "\'") ~ (!PEEK ~ ANY | escape)* ~ POP}
+
+escape = {
+      "\\" ~ ("\"" | "\\" | "b" | "f" | "n" | "r" | "t")
+    | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
+}
+
+
+atom = {
+      integer
+    | float
+    | string
+    | block_expr
+    | name
+}
+
+primary = {
+      atom
+    | "(" ~ expr ~ ")"
+}
+
+funccall = {
+      primary ~ "(" ~ ")"
+    | primary
+}
+
+power_op = {"**" | "^"}
+power = {
+      funccall ~ power_op ~ factor
+    | funccall
+}
+
+factor_op = {"+" | "-"}
+factor = {
+      factor_op ~ factor
+    | power
+}
+
+term_op = {"*" | "//" | "/" | "%"}
+term = {factor ~ (term_op ~  factor)*}
+sum_op = {"+" | "-"}
+sum = {term ~ ( sum_op ~ term )*}
+
+expr = {sum}
+
+filter = {"~>" ~ expr}
+map = {"|>" ~ expr}
+
+stream_particle = {
+      filter
+    | map
+}
+
+extended_expr = {
+    expr ~ "\n"? ~ stream_particle*
+}
+
+assignment = {name ~ "=" ~ extended_expr}
+
+
+line = {
+      assignment
+    | extended_expr
+}
+
+dir = {"dir" ~ expr ~ block}
+
+block_expr = {dir}
+
+
+block = {"{" ~ inner_program ~ "}"}
+
+inner_program = _{"\n"* ~ (line ~ ("\n" | ";")+) * ~ line? ~ ";"?}
+program = _{ SOI ~ inner_program ~ EOI }
+
+
+WHITESPACE = _{ " " | "\t" }
+COMMENT = _{ "#" ~ (!"\n" ~ ANY)* }
