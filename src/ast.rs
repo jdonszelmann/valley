@@ -98,7 +98,6 @@ impl<'s> BlockExpr<'s> {
 pub enum Atom<'s> {
     String(Cow<'s, str>),
     Integer(i64),
-    Float(f64),
     Name(Name<'s>),
     Block(BlockExpr<'s>),
 }
@@ -117,14 +116,6 @@ impl<'s> Atom<'s> {
                     .map_err(|e| ParseProgramError::ParseInt(next.as_str(), e))?;
 
                 Self::Integer(int)
-            },
-            Rule::float => {
-                let float_str = next.as_str();
-                let float = float_str
-                    .parse()
-                    .map_err(|e| ParseProgramError::ParseFloat(next.as_str(), e))?;
-
-                Self::Float(float)
             },
             Rule::name => Self::Name(
                 Name::new(next.as_str())

@@ -10,14 +10,10 @@
   </component>
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
+    <cargoProject FILE="$PROJECT_DIR$/../valley/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6699015b-d309-414d-baaa-86d1181374ca" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/ast.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/gencode.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/grammar.pest" afterDir="false" />
-    </list>
+    <list default="true" id="6699015b-d309-414d-baaa-86d1181374ca" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -43,6 +39,7 @@
     <property name="app.teamhub.trackedBranches" value="" />
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
+    <property name="codeWithMe.voiceChat.enabledByDefault" value="false" />
     <property name="nodejs_package_manager_path" value="npm" />
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
     <property name="vue.rearranger.settings.migration" value="true" />
@@ -101,7 +98,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1626781973611</updated>
-      <workItem from="1626781977201" duration="800000" />
+      <workItem from="1626781977201" duration="1736000" />
     </task>
     <servers />
   </component>
