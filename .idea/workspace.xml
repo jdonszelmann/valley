@@ -49,39 +49,7 @@
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
     <property name="vue.rearranger.settings.migration" value="true" />
   </component>
-  <component name="RunManager" selected="Cargo.Test">
-    <configuration name="Run" type="CargoCommandRunConfiguration" factoryName="Cargo Command" nameIsGenerated="true">
-      <option name="command" value="run" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="emulateTerminal" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="backtrace" value="SHORT" />
-      <envs />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Test" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
-      <option name="command" value="test" />
-      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-      <option name="channel" value="DEFAULT" />
-      <option name="requiredFeatures" value="true" />
-      <option name="allFeatures" value="false" />
-      <option name="emulateTerminal" value="false" />
-      <option name="withSudo" value="false" />
-      <option name="backtrace" value="SHORT" />
-      <envs />
-      <option name="isRedirectInput" value="false" />
-      <option name="redirectInputPath" value="" />
-      <method v="2">
-        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
-      </method>
-    </configuration>
+  <component name="RunManager" selected="Cargo.Run">
     <list>
       <item itemvalue="Cargo.Run" />
       <item itemvalue="Cargo.Test" />
