@@ -77,7 +77,7 @@ impl<'s> Dir<'s> {
 
 #[derive(Debug)]
 pub enum BlockExpr<'s> {
-    Dir(Dir<'s>)
+    FuncDef(&'s u64)
 }
 
 impl<'s> BlockExpr<'s> {
@@ -86,7 +86,9 @@ impl<'s> BlockExpr<'s> {
         let next = inner.next().unwrap();
 
         Ok(match next.as_rule() {
-
+            Rule::funcdef => {
+                todo!()
+            }
             _ => unreachable!()
         })
     }

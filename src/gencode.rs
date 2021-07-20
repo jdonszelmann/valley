@@ -1,4 +1,4 @@
-use crate::ast::{Program, Name, Line, Assignment, Expression, FuncCall, Primary, Atom, BlockExpr, Dir, Block};
+use crate::ast::{Program, Name, Line, Assignment, Expression, FuncCall, Primary, Atom, BlockExpr, Block};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -154,41 +154,32 @@ fn gencode_expr<'s>(p: Expression<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(
 }
 
 fn gencode_funccall<'s>(p: FuncCall<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
-    let FuncCall{ callee, params } = p;
+    let FuncCall{ callee, params: _ } = p;
 
-    let num_params = params.len();
-    for i in params.into_iter().rev() {
-        gencode_primary(i, g, true)?;
-    }
+    gencode_primary(callee, g)?;
 
-    gencode_primary(callee, g, false)?;
-
-    if num_params > 0 {
-        g.add_instruction(Instruction::Call {
-            num_params_on_stack: num_params
-        })?;
-    }
+    // if num_params > 0 {
+    //     g.add_instruction(Instruction::Call {
+    //         num_params_on_stack: num_params
+    //     })?;
+    // }
 
     Ok(())
 }
 
-fn gencode_primary<'s>(p: Primary<'s>, g: &'_ mut CodeGenerator<'s>, in_function: bool) -> Result<(), GenCodeError> {
+fn gencode_primary<'s>(p: Primary<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
     match p {
-        Primary::Atom(a) => gencode_atom(a, g, in_function),
+        Primary::Atom(a) => gencode_atom(a, g),
         Primary::Expression(a) => gencode_expr(*a, g),
     }
 }
 
-fn gencode_atom<'s>(p: Atom<'s>, g: &'_ mut CodeGenerator<'s>, in_function: bool) -> Result<(), GenCodeError> {
+fn gencode_atom<'s>(p: Atom<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
     match p {
         Atom::String(_) => todo!(),
         Atom::Integer(i) => g.add_instruction(Instruction::ConstInt(i)),
         Atom::Name(n) => {
-            if in_function {
-                g.add_instruction(Instruction::LoadOrFunctionParam(n))
-            } else {
-                g.add_instruction(Instruction::Load(n))
-            }
+            g.add_instruction(Instruction::Load(n))
         },
         Atom::Block(b) => {
             gencode_blockexpr(b, g)
@@ -198,25 +189,10 @@ fn gencode_atom<'s>(p: Atom<'s>, g: &'_ mut CodeGenerator<'s>, in_function: bool
 
 fn gencode_blockexpr<'s>(p: BlockExpr<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
     match p {
-        BlockExpr::Dir(d) => {
-            gencode_dir(d, g)
-        }
+        BlockExpr::FuncDef(_) => { unimplemented!() }
     }
 }
 
-fn gencode_dir<'s>(p: Dir<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
-    let Dir{ dir, block } = p;
-
-    gencode_expr(*dir, g)?;
-
-    let mut sub_generator = CodeGenerator::new();
-    gencode_block(block, &mut sub_generator)?;
-    let co = sub_generator.code_object();
-
-    g.add_instruction(Instruction::DirBlock {
-        code: co
-    })
-}
 
 pub fn gencode_block<'s>(p: Block<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
     for i in p.lines {
