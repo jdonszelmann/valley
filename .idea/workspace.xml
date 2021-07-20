@@ -13,17 +13,75 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d414b5fb-8812-43f0-a715-9ef137349c3e" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/stack_layout.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ast.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ast.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/gencode.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/gencode.rs" afterDir="false" />
+    </list>
+    <list id="2d3c2d53-1205-4dc4-961f-2656a379eac5" name="Changes by jonathan" comment="">
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ast.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ast.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/grammar.pest" beforeDir="false" afterPath="$PROJECT_DIR$/src/grammar.pest" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="LineStatusTrackerManager">
+    <file path="$PROJECT_DIR$/src/ast.rs">
+      <ranges>
+        <range start1="15" end1="16" start2="15" end2="16" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="56" end1="56" start2="56" end2="88" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="58" end1="61" start2="90" end2="94" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="63" end1="66" start2="96" end2="104" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="67" end1="69" start2="105" end2="124" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="71" end1="73" start2="126" end2="129" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="79" end1="80" start2="135" end2="136" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="89" end1="90" start2="145" end2="146" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="125" end1="125" start2="181" end2="185" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="161" end1="162" start2="221" end2="222" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="171" end1="172" start2="231" end2="232" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="187" end1="188" start2="247" end2="247" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="190" end1="191" start2="249" end2="251" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="234" end1="238" start2="294" end2="294" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="256" end1="257" start2="312" end2="313" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="258" end1="261" start2="314" end2="317" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="316" end1="316" start2="372" end2="398" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="320" end1="320" start2="402" end2="403" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="330" end1="330" start2="413" end2="416" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="340" end1="341" start2="426" end2="427" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="363" end1="364" start2="449" end2="450" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="370" end1="371" start2="456" end2="457" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="386" end1="387" start2="472" end2="478" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="393" end1="398" start2="484" end2="489" changelist="d414b5fb-8812-43f0-a715-9ef137349c3e" />
+        <range start1="400" end1="401" start2="491" end2="492" changelist="d414b5fb-8812-43f0-a715-9ef137349c3e" />
+        <range start1="402" end1="403" start2="493" end2="494" changelist="d414b5fb-8812-43f0-a715-9ef137349c3e" />
+        <range start1="405" end1="407" start2="496" end2="498" changelist="d414b5fb-8812-43f0-a715-9ef137349c3e" />
+        <range start1="409" end1="411" start2="500" end2="502" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="413" end1="414" start2="504" end2="505" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="417" end1="438" start2="508" end2="528" changelist="d414b5fb-8812-43f0-a715-9ef137349c3e" />
+        <range start1="439" end1="439" start2="529" end2="539" changelist="d414b5fb-8812-43f0-a715-9ef137349c3e" />
+      </ranges>
+    </file>
+    <file path="$PROJECT_DIR$/README.md">
+      <ranges>
+        <range start1="1" end1="1" start2="1" end2="12" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="4" end1="32" start2="15" end2="24" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="33" end1="33" start2="25" end2="52" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="34" end1="36" start2="53" end2="56" changelist="d414b5fb-8812-43f0-a715-9ef137349c3e" />
+        <range start1="37" end1="37" start2="57" end2="61" changelist="2d3c2d53-1205-4dc4-961f-2656a379eac5" />
+        <range start1="39" end1="39" start2="63" end2="140" changelist="d414b5fb-8812-43f0-a715-9ef137349c3e" />
+      </ranges>
+    </file>
   </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="evh57kas" />
@@ -47,7 +105,12 @@
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
     <property name="vue.rearranger.settings.migration" value="true" />
   </component>
-  <component name="RunManager" selected="Cargo.Run">
+  <component name="RunManager" selected="Cargo.Test">
+    <configuration default="true" type="GradleAppRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="com.jetbrains.cidr.cpp.gradle.execution.GradleNativeBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
     <list>
       <item itemvalue="Cargo.Run" />
       <item itemvalue="Cargo.Test" />
@@ -55,6 +118,7 @@
   </component>
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="/usr/bin" />
+    <option name="version" value="2" />
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -70,5 +134,27 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/gencode.rs</url>
+          <line>134</line>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

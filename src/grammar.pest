@@ -9,6 +9,11 @@ escape = {
     | "\\" ~ ("u" ~ ASCII_HEX_DIGIT{4})
 }
 
+expr_type = {
+      "u8"
+    | "u16"
+    | "*" ~ expr_type
+}
 
 atom = {
       integer
@@ -23,7 +28,7 @@ primary = {
 }
 
 funccall = {
-      primary ~ "(" ~ ")"
+      primary ~ "(" ~ expr? ~ ("," ~ expr)* ~ ")"
     | primary
 }
 
@@ -33,27 +38,25 @@ power = {
     | funccall
 }
 
-factor_op = {"+" | "-"}
+factor_op = {"++" | "--"}
 factor = {
       factor_op ~ factor
     | power
 }
 
-term_op = {"*" | "//" | "/" | "%"}
+term_op = {"*" | "/" | "%"}
 term = {factor ~ (term_op ~  factor)*}
 sum_op = {"+" | "-"}
 sum = {term ~ ( sum_op ~ term )*}
 
 expr = {sum}
 
-filter = {"~>" ~ expr}
-map = {"|>" ~ expr}
-
 assignment = {name ~ "=" ~ expr}
-
+let_assignment = {"let" ~ name ~ ":" ~ expr_type ~ "=" ~ expr}
 
 line = {
       assignment
+    | let_assignment
     | expr
     | block_expr
 }
@@ -62,15 +65,25 @@ block_expr = {
     funcdef
 }
 
+param = {
+    name ~ ":" ~ expr_type
+}
+
 funcdef = {
-    "fn"
+    "fn" ~ name ~ "(" ~ param? ~ ("," ~ param)* ~ ")" ~ block
 }
 
 block = {"{" ~ inner_program ~ "}"}
+inner_program = _{(line ~ ";"+) * ~ line? ~ ";"?}
 
-inner_program = _{"\n"* ~ (line ~ ("\n" | ";")+) * ~ line? ~ ";"?}
-program = _{ SOI ~ inner_program ~ EOI }
+toplevel = _{
+    funcdef
+}
+
+toplevel_program = _{toplevel*}
+
+program = _{ SOI ~ toplevel_program ~ EOI }
 
 
-WHITESPACE = _{ " " | "\t" }
+WHITESPACE = _{ " " | "\t" | "\n" }
 COMMENT = _{ "#" ~ (!"\n" ~ ANY)* }

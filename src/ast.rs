@@ -13,7 +13,7 @@ struct GrammarParser;
 
 type Pair<'s> =  pest::iterators::Pair<'s, Rule>;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Eq, Hash)]
 pub struct Name<'s> {
     pub value: Cow<'s, str>
 }
@@ -55,29 +55,85 @@ impl<'s> Block<'s> {
     }
 }
 
-#[derive(Debug)]
-pub struct Dir<'s> {
-    pub dir: Box<Expression<'s>>,
-    pub block: Block<'s>,
+#[derive(Debug, Clone)]
+pub enum Type {
+    U8,
+    U16,
+    Pointer(Box<Type>)
 }
 
-impl<'s> Dir<'s> {
-    pub fn parse(block: Pair<'s>) -> Result<Self, ParseProgramError> {
-        let mut inner = block.into_inner();
+impl Type {
+    pub fn size(&self) -> u64 {
+        match self {
+            Type::U8 => 1,
+            Type::U16 => 2,
+            Type::Pointer(_) => 2,
+        }
+    }
 
-        let dir = Expression::parse_expr(inner.next().unwrap())?;
-        let block = Block::parse(inner.next().unwrap())?;
+    pub fn parse(tp: &str) -> Result<Self, ParseProgramError> {
+        Ok(match tp {
+            "u8" => Type::U8,
+            "u16" => Type::U16,
+            i if i.starts_with("*") => Type::Pointer(Box::new(Type::parse(&i[1..])?)),
+            _ => unreachable!()
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct Param<'s> {
+    pub param_type: Type,
+    pub name: Name<'s>,
+}
+
+#[derive(Debug)]
+pub struct FuncDef<'s> {
+    pub(crate) block: Block<'s>,
+    pub(crate) name: Name<'s>,
+    pub(crate) params: Vec<Param<'s>>
+}
+
+
+impl<'s> FuncDef<'s> {
+    fn parse_param(params: Pair<'s>) -> Result<Param<'s>, ParseProgramError> {
+
+        let mut inner = params.into_inner();
+
+        let name = Name::new(inner.next().unwrap().as_str());
+        let param_type = Type::parse(inner.next().unwrap().as_str())?;
+
+        Ok(Param {
+            param_type,
+            name,
+        })
+    }
+
+    pub fn parse(funcdef: Pair<'s>) -> Result<Self, ParseProgramError> {
+        let mut inner = funcdef.into_inner();
+
+        let name = Name::new(inner.next().unwrap().as_str());
+
+        let mut maybe_params = inner.next().unwrap();
+        let mut params = Vec::new();
+        while maybe_params.as_rule() == Rule::param {
+            params.push(Self::parse_param(maybe_params)?);
+            maybe_params = inner.next().unwrap();
+        }
+
+        let block = Block::parse(maybe_params)?;
 
         Ok(Self {
-            dir: Box::new(dir),
-            block
+            block,
+            params,
+            name,
         })
     }
 }
 
 #[derive(Debug)]
 pub enum BlockExpr<'s> {
-    FuncDef(&'s u64)
+    FuncDef(FuncDef<'s>)
 }
 
 impl<'s> BlockExpr<'s> {
@@ -87,7 +143,7 @@ impl<'s> BlockExpr<'s> {
 
         Ok(match next.as_rule() {
             Rule::funcdef => {
-                todo!()
+                BlockExpr::FuncDef(FuncDef::parse(next)?)
             }
             _ => unreachable!()
         })
@@ -123,6 +179,10 @@ impl<'s> Atom<'s> {
             Rule::block_expr => {
                 Self::Block(BlockExpr::parse(next)?)
             },
+            Rule::string => {
+                let string = next.as_str();
+                Self::String(Cow::Borrowed(&string[1..string.len() - 1]))
+            }
             _ => unreachable!()
         })
     }
@@ -159,7 +219,7 @@ impl<'s> Primary<'s> {
 #[derive(Debug)]
 pub struct FuncCall<'s> {
     pub callee: Primary<'s>,
-    pub params: Vec<Primary<'s>>,
+    pub params: Vec<Expression<'s>>,
 }
 
 impl<'s> FuncCall<'s> {
@@ -169,7 +229,7 @@ impl<'s> FuncCall<'s> {
         let callee = Primary::parse(inner.next().unwrap())?;
         let mut params = Vec::new();
         for param in inner {
-            params.push(Primary::parse(param)?);
+            params.push(Expression::parse_expr(param)?);
         }
 
         Ok(Self {
@@ -185,10 +245,10 @@ pub enum Expression<'s> {
     Subtract(Box<Expression<'s>>, Box<Expression<'s>>),
     Mult(Box<Expression<'s>>, Box<Expression<'s>>),
     Divide(Box<Expression<'s>>, Box<Expression<'s>>),
-    IntegerDivide(Box<Expression<'s>>, Box<Expression<'s>>),
     Modulo(Box<Expression<'s>>, Box<Expression<'s>>),
     Exponent(Box<Expression<'s>>, Box<Expression<'s>>),
-    Negate(Box<Expression<'s>>),
+    Increment(Box<Expression<'s>>),
+    Decrement(Box<Expression<'s>>),
     FuncCall(FuncCall<'s>)
 }
 
@@ -232,10 +292,6 @@ impl<'s> Expression<'s> {
                     Box::new(left),
                     Box::new(Self::parse_factor(inner.next().unwrap())?)
                 ),
-                "//" => Expression::IntegerDivide(
-                    Box::new(left),
-                    Box::new(Self::parse_factor(inner.next().unwrap())?)
-                ),
                 "%" => Expression::Modulo(
                     Box::new(left),
                     Box::new(Self::parse_factor(inner.next().unwrap())?)
@@ -254,11 +310,11 @@ impl<'s> Expression<'s> {
 
 
         Ok(match next.as_str() {
-            "+" => Self::parse_factor(
+            "++" => Expression::Increment(Box::new(Self::parse_factor(
                 inner.next().unwrap()
-            )?,
-            "-" => {
-                Expression::Negate(Box::new(Self::parse_factor(
+            )?)),
+            "--" => {
+                Expression::Decrement(Box::new(Self::parse_factor(
                     inner.next().unwrap()
                 )?))
             },
@@ -316,8 +372,35 @@ impl<'s> Assignment<'s> {
 }
 
 #[derive(Debug)]
+pub struct LetAssignment<'s> {
+    pub tp: Type,
+    pub to: Name<'s>,
+    pub expr: Expression<'s>,
+}
+
+impl<'s> LetAssignment<'s> {
+    pub fn parse(line: Pair<'s>) -> Result<Self, ParseProgramError> {
+        let mut inner = line.into_inner();
+        let name = inner.next().unwrap();
+        let tp = inner.next().unwrap();
+        let expression = inner.next().unwrap();
+
+        let name_string = name.as_str();
+        let tp = Type::parse(tp.as_str())?;
+        let expr = Expression::parse_expr(expression)?;
+
+        Ok(Self {
+            tp,
+            to: Name::new(name_string),
+            expr,
+        })
+    }
+}
+
+#[derive(Debug)]
 pub enum Line<'s> {
     Assignment(Assignment<'s>),
+    LetAssignment(LetAssignment<'s>),
     Expression(Expression<'s>),
 }
 
@@ -327,6 +410,9 @@ impl<'s> Line<'s> {
         Ok(match inner.as_rule() {
             Rule::assignment => {
                 Line::Assignment(Assignment::parse(inner)?)
+            }
+            Rule::let_assignment => {
+                Line::LetAssignment(LetAssignment::parse(inner)?)
             }
             Rule::expr => {
                 Line::Expression(Expression::parse_expr(inner)?)
@@ -338,7 +424,7 @@ impl<'s> Line<'s> {
 
 #[derive(Debug)]
 pub struct Program<'s> {
-    pub lines: Vec<Line<'s>>
+    pub functions: Vec<FuncDef<'s>>
 }
 
 #[derive(Error, Debug)]
@@ -361,14 +447,14 @@ impl<'s> Program<'s> {
 
         for line in program {
             match line.as_rule() {
-                Rule::line => lines.push(Line::parse(line)?),
+                Rule::funcdef => lines.push(FuncDef::parse(line)?),
                 Rule::EOI => {},
                 _ => unreachable!()
             }
         }
 
         Ok(Self {
-            lines,
+            functions: lines,
         })
     }
 }
@@ -384,57 +470,71 @@ mod tests {
             fn $name() {
                 $(
                     println!("{}", $inp);
-                    let _ = Program::from_string($inp).unwrap();
+                    match Program::from_string($inp) {
+                        Ok(_) => {},
+                        Err(e) => {
+                            panic!("{}", e)
+                        }
+                    }
                 )*
             }
         };
     }
 
     test_parse!(assignment_and_lines
-        "a = 3"
-        "a = 3;"
-        "a = 3; b = 4"
-        "a = 3; b = 4;"
-        "a = 3
+        "fn main(){a = 3;}"
+        "fn main(){a = 3;}"
+        "fn main(){a = 3; b = 4}"
+        "fn main(){a = 3; b = 4;}"
+        "fn main(){a = 3;
 
 
-        b = 3
+        b = 3;}
         "
-        "a = 3
+        "fn main() {a = 3;
 
 
-        b = 3"
-        "a = 3
+        b = 3;}"
+        "fn main() {a = 3;
 
 
-        b = 3;"
-        "a = 3;
+        b = 3;}"
+        "fn main() {a = 3;
 
 
-        b = 3;"
+        b = 3;}"
     );
 
     test_parse!(arithmetic
-        "3 + 4"
-        "3 - 4"
-        "3 * 4"
-        "3 / 4"
-        "3 // 4"
-        "3 % 4"
-        "3 ** 4"
-        "3 ** -4"
-        "-3 ** -4"
-        "-3 - -4"
-        "-3 + -4"
-        "-3 + --4"
-        "-3 + -----4"
-        "-3 + +4"
-        "-3 + +-+-+4"
-        "3 + 4 + 3"
-        "3 * 4 * 3"
-        "3 * 4 / 3"
-        "(3 + 5)"
-        "(3 + 5) + 5"
-        "3 + (5 + 5)"
+       "fn main() {3 + 4;}"
+       "fn main() {3 - 4;}"
+       "fn main() {3 * 4;}"
+       "fn main() {3 / 4;}"
+       "fn main() {3 % 4;}"
+       "fn main() {3 ** 4;}"
+       "fn main() {3 ** --4;}"
+       "fn main() {--3 ** --4;}"
+       "fn main() {--3 - --4;}"
+       "fn main() {--3 + --4;}"
+       "fn main() {--3 + --4;}"
+       "fn main() {--3 + ----4;}"
+       "fn main() {--3 + ++4;}"
+       "fn main() {--3 + ++--4;}"
+       "fn main() {3 + 4 + 3;}"
+       "fn main() {3 * 4 * 3;}"
+       "fn main() {3 * 4 / 3;}"
+       "fn main() {(3 + 5);}"
+       "fn main() {(3 + 5) + 5;}"
+       "fn main() {3 + (5 + 5);}"
+    );
+    test_parse!(functions
+        "fn main() { test();}"
+        "fn main() { test(kees);}"
+        "fn main() { test(kees, 3, vierentwintig, 8 + 8, \"test\");}"
+        "fn test() { }"
+        "fn test(x: u8) { }"
+        "fn test(x: u8, y: u8, z: u8) { }"
+        "fn test(x: *u8) { }"
+        "fn test(x: ***u8) { }"
     );
 }

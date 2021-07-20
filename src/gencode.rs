@@ -1,43 +1,78 @@
-use crate::ast::{Program, Name, Line, Assignment, Expression, FuncCall, Primary, Atom, BlockExpr, Block};
+use crate::ast::{
+    Assignment, Atom, Block, BlockExpr, Expression, FuncCall, FuncDef, LetAssignment, Line, Name,
+    Primary, Program,
+};
+use crate::gencode::Instruction::Label;
+use crate::stack_layout::StackLayout;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum GenCodeError {
-
-}
+pub enum GenCodeError {}
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum Instruction<'s> {
-    Pop,
-    Add,
-    Subtract,
-    Divide,
-    Mult,
-    Exponent,
-    Modulo,
-    IntegerDivide,
-    Negate,
+    Label(Name<'s>),
+    StackPointerToX,
+    XToStackPointer,
 
-    Store(Name<'s>),
-    Load(Name<'s>),
-    LoadOrFunctionParam(Name<'s>),
+    XToA,
+    AToX,
 
-    ConstInt(i64),
-    ConstFloat(f64),
+    PushA,
+    PopA,
 
-    Call{num_params_on_stack: usize},
+    IncrementX,
+    DecrementX,
 
-    DirBlock{ code: CodeObject<'s>}
+    AddImmediateWithCarry(u16),
+    SubImmediateWithCarry(u16),
+
+    ReturnFromSubroutine,
 }
 
-pub struct CodeGenerator<'s> {
-    instructions: Vec<Instruction<'s>>
+impl<'s> Instruction<'s> {
+    fn to_str(&self) -> String {
+        match self {
+            Self::Label(x) => format!("{}:", x.value),
+            Self::StackPointerToX => "STX",
+            Self::XToStackPointer => "SXT",
+            Self::XToA => "TXA",
+            Self::AToX => "TAX",
+            Self::PushA => "PHA",
+            Self::PopA => "PLA",
+            Self::IncrementX => "INX",
+            Self::DecrementX => "DEX",
+            Self::AddImmediateWithCarry(x) => format!("ADC #{}", x),
+            Self::SubImmediateWithCarry(x) => format!("SBC #{}", x),
+            Self::ReturnFromSubroutine => "RTS",
+        }
+    }
 }
 
-impl<'s> CodeGenerator<'s> {
-    pub fn new() -> Self {
+pub struct GeneratedProgram<'s> {
+    pub functions: Vec<FunctionBlock<'s>>,
+}
+
+impl<'s> GeneratedProgram<'s> {
+    fn new() -> Self {
+        Self { functions: vec![] }
+    }
+}
+
+pub struct FunctionBlock<'s> {
+    name: Name<'s>,
+    instructions: Vec<Instruction<'s>>,
+    stack_layout: StackLayout<'s>,
+}
+
+impl<'s> FunctionBlock<'s> {
+    pub fn new(name: Name<'s>) -> Self {
+        let mut stack_layout = StackLayout::new();
+
         Self {
-            instructions: vec![]
+            name: name.clone(),
+            instructions: vec![Label(name)],
+            stack_layout,
         }
     }
 
@@ -49,101 +84,142 @@ impl<'s> CodeGenerator<'s> {
         self.instructions.push(instr);
         Ok(())
     }
+}
 
-    pub fn code_object(self) -> CodeObject<'s> {
-        CodeObject {
-            instructions: self.instructions
+fn gencode(p: Program) -> Result<GeneratedProgram, GenCodeError> {
+    let mut g = GeneratedProgram::new();
+    gencode_program(p, &mut g)?;
+
+    Ok(g)
+}
+
+pub fn gencode_funcdef<'s>(
+    p: FuncDef<'s>,
+    g: &'_ mut FunctionBlock<'s>,
+) -> Result<(), GenCodeError> {
+    let d = p.get_declared_bytes(&mut g.stack_layout);
+
+    // Create stack frame
+    if d == 0 {
+    } else if d == 1 {
+        g.add_instruction(Instruction::PushA)?;
+    } else if d <= 3 {
+        // 4 + 2 * n
+        g.add_instruction(Instruction::StackPointerToX)?; // 2
+        for _ in 0..d {
+            g.add_instruction(Instruction::DecrementX)?; // 2 * d
+        }
+        g.add_instruction(Instruction::XToStackPointer)?; // 2
+    } else {
+        // 10
+        g.add_instruction(Instruction::StackPointerToX)?; // 2
+        g.add_instruction(Instruction::XToA)?; // 2
+        g.add_instruction(Instruction::SubImmediateWithCarry(d as u16))?; // 2
+        g.add_instruction(Instruction::AToX)?; // 2
+        g.add_instruction(Instruction::XToStackPointer)?; // 2
+    }
+
+    // Gen code
+    gencode_block(p.block, g)?;
+
+    // Clean up stack frame
+    if d == 0 {
+    } else if d == 1 {
+        g.add_instruction(Instruction::PopA)?;
+    } else if d <= 3 {
+        // 4 + 2 * n
+        g.add_instruction(Instruction::StackPointerToX)?; // 2
+        for _ in 0..d {
+            g.add_instruction(Instruction::IncrementX)?; // 2 * d
+        }
+        g.add_instruction(Instruction::XToStackPointer)?; // 2
+    } else {
+        // 10
+        g.add_instruction(Instruction::StackPointerToX)?; // 2
+        g.add_instruction(Instruction::XToA)?; // 2
+        g.add_instruction(Instruction::AddImmediateWithCarry(d as u16))?; // 2
+        g.add_instruction(Instruction::AToX)?; // 2
+        g.add_instruction(Instruction::XToStackPointer)?; // 2
+    }
+
+    g.add_instruction(Instruction::ReturnFromSubroutine)?;
+
+    Ok(())
+}
+
+pub fn gencode_program<'s>(
+    p: Program<'s>,
+    g: &'_ mut GeneratedProgram<'s>,
+) -> Result<(), GenCodeError> {
+    for f in p.functions {
+        let mut fnb = FunctionBlock::new(f.name.clone());
+        gencode_funcdef(f, &mut fnb)?;
+        g.functions.push(fnb)
+    }
+
+    Ok(())
+}
+
+fn gencode_line<'s>(p: Line<'s>, g: &'_ mut FunctionBlock<'s>) -> Result<(), GenCodeError> {
+    match p {
+        Line::Assignment(a) => gencode_assignment(a, g),
+        Line::Expression(e) => gencode_expr(e, g),
+        Line::LetAssignment(LetAssignment { to, expr, .. }) => {
+            gencode_assignment(Assignment { to, expr }, g)
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct CodeObject<'s> {
-    pub instructions: Vec<Instruction<'s>>
-}
-
-impl<'s> AsRef<CodeObject<'s>> for CodeObject<'s> {
-    fn as_ref(&self) -> &CodeObject<'s> {
-        self
-    }
-}
-
-
-fn gencode(p: Program) -> Result<CodeObject, GenCodeError> {
-    let mut g = CodeGenerator::new();
-    gencode_program(p, &mut g)?;
-
-    Ok(g.code_object())
-}
-
-pub fn gencode_program<'s>(p: Program<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
-    for i in p.lines {
-        gencode_line(i, g)?;
-    }
-
-    Ok(())
-}
-
-fn gencode_line<'s>(p: Line<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
-    match p {
-        Line::Assignment(a) => gencode_assignment(a, g),
-        Line::Expression(e) => {
-            gencode_expr(e, g)?;
-            // when a line contains just an expression, its side effects are
-            // applied, but the result is discarded (and thus needs to be popped)
-            g.add_instruction(Instruction::Pop)
-        },
-    }
-}
-
-fn gencode_assignment<'s>(p: Assignment<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
-    let Assignment{to, expr, } = p;
+fn gencode_assignment<'s>(
+    p: Assignment<'s>,
+    g: &'_ mut FunctionBlock<'s>,
+) -> Result<(), GenCodeError> {
+    let Assignment { to, expr } = p;
     gencode_expr(expr, g)?;
-    g.add_instruction(Instruction::Store(to))?;
+    // g.add_instruction(Instruction::Store(to))?;
 
     Ok(())
 }
 
-fn gencode_expr<'s>(p: Expression<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
+fn gencode_expr<'s>(p: Expression<'s>, g: &'_ mut FunctionBlock<'s>) -> Result<(), GenCodeError> {
     match p {
         Expression::Add(a, b) => {
             gencode_expr(*a, g)?;
             gencode_expr(*b, g)?;
-            g.add_instruction(Instruction::Add)?;
+            // g.add_instruction(Instruction::Add)?;
         }
         Expression::Subtract(a, b) => {
             gencode_expr(*b, g)?;
             gencode_expr(*a, g)?;
-            g.add_instruction(Instruction::Subtract)?;
+            // g.add_instruction(Instruction::Subtract)?;
         }
         Expression::Mult(a, b) => {
             gencode_expr(*a, g)?;
             gencode_expr(*b, g)?;
-            g.add_instruction(Instruction::Mult)?;
+            // g.add_instruction(Instruction::Mult)?;
         }
         Expression::Divide(a, b) => {
             gencode_expr(*a, g)?;
             gencode_expr(*b, g)?;
-            g.add_instruction(Instruction::Divide)?;
-        }
-        Expression::IntegerDivide(a, b) => {
-            gencode_expr(*a, g)?;
-            gencode_expr(*b, g)?;
-            g.add_instruction(Instruction::IntegerDivide)?;
+            // g.add_instruction(Instruction::Divide)?;
         }
         Expression::Modulo(a, b) => {
             gencode_expr(*a, g)?;
             gencode_expr(*b, g)?;
-            g.add_instruction(Instruction::Modulo)?;
+            // g.add_instruction(Instruction::Modulo)?;
         }
         Expression::Exponent(a, b) => {
             gencode_expr(*a, g)?;
             gencode_expr(*b, g)?;
-            g.add_instruction(Instruction::Exponent)?;
+            // g.add_instruction(Instruction::Exponent)?;
         }
-        Expression::Negate(a) => {
+        Expression::Decrement(a) => {
             gencode_expr(*a, g)?;
-            g.add_instruction(Instruction::Negate)?;
+            // g.add_instruction(Instruction::Decrement)?;
+        }
+        Expression::Increment(a) => {
+            gencode_expr(*a, g)?;
+            // g.add_instruction(Instruction::Increment)?;
         }
         Expression::FuncCall(f) => {
             gencode_funccall(f, g)?;
@@ -153,48 +229,37 @@ fn gencode_expr<'s>(p: Expression<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(
     Ok(())
 }
 
-fn gencode_funccall<'s>(p: FuncCall<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
-    let FuncCall{ callee, params: _ } = p;
+fn gencode_funccall<'s>(p: FuncCall<'s>, g: &'_ mut FunctionBlock<'s>) -> Result<(), GenCodeError> {
+    let FuncCall { callee, params: _ } = p;
 
     gencode_primary(callee, g)?;
-
-    // if num_params > 0 {
-    //     g.add_instruction(Instruction::Call {
-    //         num_params_on_stack: num_params
-    //     })?;
-    // }
 
     Ok(())
 }
 
-fn gencode_primary<'s>(p: Primary<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
+fn gencode_primary<'s>(p: Primary<'s>, g: &'_ mut FunctionBlock<'s>) -> Result<(), GenCodeError> {
     match p {
         Primary::Atom(a) => gencode_atom(a, g),
         Primary::Expression(a) => gencode_expr(*a, g),
     }
 }
 
-fn gencode_atom<'s>(p: Atom<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
+fn gencode_atom<'s>(p: Atom<'s>, g: &'_ mut FunctionBlock<'s>) -> Result<(), GenCodeError> {
     match p {
         Atom::String(_) => todo!(),
-        Atom::Integer(i) => g.add_instruction(Instruction::ConstInt(i)),
-        Atom::Name(n) => {
-            g.add_instruction(Instruction::Load(n))
-        },
-        Atom::Block(b) => {
-            gencode_blockexpr(b, g)
+        Atom::Integer(i) => {
+            // g.add_instruction(Instruction::ConstInt(i)),
+            Ok(())
         }
+        Atom::Name(n) => {
+            // g.add_instruction(Instruction::Load(n))
+            Ok(())
+        }
+        Atom::Block(b) => gencode_blockexpr(b, g),
     }
 }
 
-fn gencode_blockexpr<'s>(p: BlockExpr<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
-    match p {
-        BlockExpr::FuncDef(_) => { unimplemented!() }
-    }
-}
-
-
-pub fn gencode_block<'s>(p: Block<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
+pub fn gencode_block<'s>(p: Block<'s>, g: &'_ mut FunctionBlock<'s>) -> Result<(), GenCodeError> {
     for i in p.lines {
         gencode_line(i, g)?;
     }
@@ -204,15 +269,17 @@ pub fn gencode_block<'s>(p: Block<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(
 
 #[cfg(test)]
 mod tests {
-    use crate::gencode::{gencode_program, CodeGenerator};
-    use crate::ast::{Program, Line, Name, Assignment, Expression, FuncCall, Primary, Atom};
+    use crate::ast::{
+        Assignment, Atom, Block, Expression, FuncCall, FuncDef, Line, Name, Primary, Program,
+    };
     use crate::gencode::Instruction::*;
+    use crate::gencode::{gencode_program, FunctionBlock, GeneratedProgram};
 
     macro_rules! parse_test {
         ($name: ident : $input: literal => $($instr: expr),* $(,)?) => {
             #[test]
             fn $name() {
-                let mut g = CodeGenerator::new();
+                let mut g = GeneratedProgram::new();
                 let p = Program::from_string($input).unwrap();
 
                 gencode_program(p, &mut g).unwrap();
@@ -229,78 +296,24 @@ mod tests {
         };
     }
 
-    #[test]
-    fn test_gen_code() {
-        let mut g = CodeGenerator::new();
-        let p = Program{ lines: vec![Line::Assignment(
-            Assignment {
-                to: Name::new("a"),
-                expr: Expression::Add(
-                    Box::new(Expression::FuncCall(FuncCall{callee: Primary::Atom(Atom::Integer(3)), params: vec![]})),
-                    Box::new(Expression::FuncCall(FuncCall{callee: Primary::Atom(Atom::Integer(4)), params: vec![]})),
-                ),
+    macro_rules! stack_size_test {
+        ($name: ident : $input: literal, $stack_size: literal) => {
+            #[test]
+            fn $name() {
+                let mut g = GeneratedProgram::new();
+                let p = Program::from_string($input).unwrap();
+
+                gencode_program(p, &mut g).unwrap();
+
+                assert_eq!(g.functions[0].stack_layout.size(), $stack_size,);
             }
-        )] };
-
-        gencode_program(p, &mut g).unwrap();
-
-        assert_eq!(
-            g.instructions().cloned().collect::<Vec<_>>(),
-            vec![
-                ConstInt(3),
-                ConstInt(4),
-                Add,
-                Store(Name::new("a"))
-            ]
-        );
+        };
     }
 
-    parse_test!(simple : "a = 3 + 4" =>
-        ConstInt(3),
-        ConstInt(4),
-        Add,
-        Store(Name::new("a")),
-    );
-    parse_test!(compound : "a = 3 + 4; b = a + 3" =>
-        ConstInt(3),
-        ConstInt(4),
-        Add,
-        Store(Name::new("a")),
-        Load(Name::new("a")),
-        ConstInt(3),
-        Add,
-        Store(Name::new("b")),
-    );
-    parse_test!(precedence : "a = 3 + 4 * 5" =>
-        ConstInt(3),
-        ConstInt(4),
-        ConstInt(5),
-        Mult,
-        Add,
-        Store(Name::new("a")),
-    );
-    parse_test!(precedence_2 : "a = 3 * 4 + 5" =>
-        ConstInt(3),
-        ConstInt(4),
-        Mult,
-        ConstInt(5),
-        Add,
-        Store(Name::new("a")),
-    );
-    parse_test!(parens : "a = (3 + 4) * 5" =>
-        ConstInt(3),
-        ConstInt(4),
-        Add,
-        ConstInt(5),
-        Mult,
-        Store(Name::new("a")),
-    );
-    parse_test!(pop_sideeffect_expr : "(3 + 4) * 5" =>
-        ConstInt(3),
-        ConstInt(4),
-        Add,
-        ConstInt(5),
-        Mult,
-        Pop
-    );
+    stack_size_test!(simple: "fn main() {}", 0);
+    stack_size_test!(byte: "fn main() {let a: u8 = 3;}", 1);
+    stack_size_test!(double_byte: "fn main() {let a: u16 = 3;}", 2);
+    stack_size_test!(two_double_byte: "fn main() {let a: u16 = 3; let b: u16 = 4}", 4);
+    stack_size_test!(pointer: "fn main() {let a: *u8 = 3;}", 2);
+    stack_size_test!(param: "fn main(a: u8) {}", 0);
 }
