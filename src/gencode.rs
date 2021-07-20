@@ -1,4 +1,4 @@
-use crate::ast::{Program, Name, Line, Assignment, Expression, ExpressionType, FuncCall, Primary, Atom, BlockExpr, Dir, Block};
+use crate::ast::{Program, Name, Line, Assignment, Expression, FuncCall, Primary, Atom, BlockExpr, Dir, Block};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -105,56 +105,47 @@ fn gencode_assignment<'s>(p: Assignment<'s>, g: &'_ mut CodeGenerator<'s>) -> Re
 }
 
 fn gencode_expr<'s>(p: Expression<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
-    let Expression{ et, streams, } = p;
-    gencode_exprt(et, g)?;
-
-
-
-    Ok(())
-}
-
-fn gencode_exprt<'s>(p: ExpressionType<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(), GenCodeError> {
     match p {
-        ExpressionType::Add(a, b) => {
-            gencode_exprt(*a, g)?;
-            gencode_exprt(*b, g)?;
+        Expression::Add(a, b) => {
+            gencode_expr(*a, g)?;
+            gencode_expr(*b, g)?;
             g.add_instruction(Instruction::Add)?;
         }
-        ExpressionType::Subtract(a, b) => {
-            gencode_exprt(*b, g)?;
-            gencode_exprt(*a, g)?;
+        Expression::Subtract(a, b) => {
+            gencode_expr(*b, g)?;
+            gencode_expr(*a, g)?;
             g.add_instruction(Instruction::Subtract)?;
         }
-        ExpressionType::Mult(a, b) => {
-            gencode_exprt(*a, g)?;
-            gencode_exprt(*b, g)?;
+        Expression::Mult(a, b) => {
+            gencode_expr(*a, g)?;
+            gencode_expr(*b, g)?;
             g.add_instruction(Instruction::Mult)?;
         }
-        ExpressionType::Divide(a, b) => {
-            gencode_exprt(*a, g)?;
-            gencode_exprt(*b, g)?;
+        Expression::Divide(a, b) => {
+            gencode_expr(*a, g)?;
+            gencode_expr(*b, g)?;
             g.add_instruction(Instruction::Divide)?;
         }
-        ExpressionType::IntegerDivide(a, b) => {
-            gencode_exprt(*a, g)?;
-            gencode_exprt(*b, g)?;
+        Expression::IntegerDivide(a, b) => {
+            gencode_expr(*a, g)?;
+            gencode_expr(*b, g)?;
             g.add_instruction(Instruction::IntegerDivide)?;
         }
-        ExpressionType::Modulo(a, b) => {
-            gencode_exprt(*a, g)?;
-            gencode_exprt(*b, g)?;
+        Expression::Modulo(a, b) => {
+            gencode_expr(*a, g)?;
+            gencode_expr(*b, g)?;
             g.add_instruction(Instruction::Modulo)?;
         }
-        ExpressionType::Exponent(a, b) => {
-            gencode_exprt(*a, g)?;
-            gencode_exprt(*b, g)?;
+        Expression::Exponent(a, b) => {
+            gencode_expr(*a, g)?;
+            gencode_expr(*b, g)?;
             g.add_instruction(Instruction::Exponent)?;
         }
-        ExpressionType::Negate(a) => {
-            gencode_exprt(*a, g)?;
+        Expression::Negate(a) => {
+            gencode_expr(*a, g)?;
             g.add_instruction(Instruction::Negate)?;
         }
-        ExpressionType::FuncCall(f) => {
+        Expression::FuncCall(f) => {
             gencode_funccall(f, g)?;
         }
     }
@@ -184,7 +175,7 @@ fn gencode_funccall<'s>(p: FuncCall<'s>, g: &'_ mut CodeGenerator<'s>) -> Result
 fn gencode_primary<'s>(p: Primary<'s>, g: &'_ mut CodeGenerator<'s>, in_function: bool) -> Result<(), GenCodeError> {
     match p {
         Primary::Atom(a) => gencode_atom(a, g, in_function),
-        Primary::Expression(a) => gencode_exprt(*a, g),
+        Primary::Expression(a) => gencode_expr(*a, g),
     }
 }
 
@@ -192,7 +183,6 @@ fn gencode_atom<'s>(p: Atom<'s>, g: &'_ mut CodeGenerator<'s>, in_function: bool
     match p {
         Atom::String(_) => todo!(),
         Atom::Integer(i) => g.add_instruction(Instruction::ConstInt(i)),
-        Atom::Float(f) => g.add_instruction(Instruction::ConstFloat(f)),
         Atom::Name(n) => {
             if in_function {
                 g.add_instruction(Instruction::LoadOrFunctionParam(n))
@@ -239,7 +229,7 @@ pub fn gencode_block<'s>(p: Block<'s>, g: &'_ mut CodeGenerator<'s>) -> Result<(
 #[cfg(test)]
 mod tests {
     use crate::gencode::{gencode_program, CodeGenerator};
-    use crate::ast::{Program, Line, Name, Assignment, Expression, ExpressionType, FuncCall, Primary, Atom};
+    use crate::ast::{Program, Line, Name, Assignment, Expression, FuncCall, Primary, Atom};
     use crate::gencode::Instruction::*;
 
     macro_rules! parse_test {
@@ -269,13 +259,10 @@ mod tests {
         let p = Program{ lines: vec![Line::Assignment(
             Assignment {
                 to: Name::new("a"),
-                expr: Expression {
-                    et: ExpressionType::Add(
-                        Box::new(ExpressionType::FuncCall(FuncCall{callee: Primary::Atom(Atom::Integer(3)), params: vec![]})),
-                        Box::new(ExpressionType::FuncCall(FuncCall{callee: Primary::Atom(Atom::Integer(4)), params: vec![]})),
-                    ),
-                    streams: vec![]
-                }
+                expr: Expression::Add(
+                    Box::new(Expression::FuncCall(FuncCall{callee: Primary::Atom(Atom::Integer(3)), params: vec![]})),
+                    Box::new(Expression::FuncCall(FuncCall{callee: Primary::Atom(Atom::Integer(4)), params: vec![]})),
+                ),
             }
         )] };
 

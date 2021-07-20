@@ -10,10 +10,16 @@
   </component>
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
-    <cargoProject FILE="$PROJECT_DIR$/../valley/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6699015b-d309-414d-baaa-86d1181374ca" name="Default Changelist" comment="" />
+    <list default="true" id="d414b5fb-8812-43f0-a715-9ef137349c3e" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/rc_6502.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ast.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/ast.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gencode.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/gencode.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/grammar.pest" beforeDir="false" afterPath="$PROJECT_DIR$/src/grammar.pest" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -23,9 +29,9 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="MacroExpansionManager">
-    <option name="directoryName" value="y7zk1hg3" />
+    <option name="directoryName" value="evh57kas" />
   </component>
-  <component name="ProjectId" id="1vZuX5QHuLEmBkqIG5VojHAiPK6" />
+  <component name="ProjectId" id="1vZypFKnshu6fY4wRl1TD5KvPnG" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -36,11 +42,10 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="RunOnceActivity.cidr.known.project.marker" value="true" />
     <property name="WebServerToolWindowFactoryState" value="true" />
-    <property name="app.teamhub.trackedBranches" value="" />
+    <property name="app.teamhub.trackedBranches" value="74992v/master" />
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
     <property name="codeWithMe.voiceChat.enabledByDefault" value="false" />
-    <property name="nodejs_package_manager_path" value="npm" />
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
     <property name="vue.rearranger.settings.migration" value="true" />
   </component>
@@ -77,11 +82,6 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="GradleAppRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="com.jetbrains.cidr.cpp.gradle.execution.GradleNativeBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
     <list>
       <item itemvalue="Cargo.Run" />
       <item itemvalue="Cargo.Test" />
@@ -93,12 +93,12 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="6699015b-d309-414d-baaa-86d1181374ca" name="Default Changelist" comment="" />
-      <created>1626781973611</created>
+      <changelist id="d414b5fb-8812-43f0-a715-9ef137349c3e" name="Default Changelist" comment="" />
+      <created>1626784088387</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1626781973611</updated>
-      <workItem from="1626781977201" duration="1736000" />
+      <updated>1626784088387</updated>
+      <workItem from="1626784091692" duration="167000" />
     </task>
     <servers />
   </component>

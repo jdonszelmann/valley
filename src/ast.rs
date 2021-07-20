@@ -86,9 +86,7 @@ impl<'s> BlockExpr<'s> {
         let next = inner.next().unwrap();
 
         Ok(match next.as_rule() {
-            Rule::dir => {
-                BlockExpr::Dir(Dir::parse(next)?)
-            }
+
             _ => unreachable!()
         })
     }
@@ -131,7 +129,7 @@ impl<'s> Atom<'s> {
 #[derive(Debug)]
 pub enum Primary<'s> {
     Atom(Atom<'s>),
-    Expression(Box<ExpressionType<'s>>)
+    Expression(Box<Expression<'s>>)
 }
 
 impl<'s> Primary<'s> {
@@ -142,7 +140,7 @@ impl<'s> Primary<'s> {
         Ok(match possible_atom.as_rule() {
             Rule::expr => {
                 Self::Expression(
-                    Box::new(Expression::parse_expr_type(
+                    Box::new(Expression::parse_expr(
                         possible_atom
                     )?)
                 )
@@ -180,32 +178,20 @@ impl<'s> FuncCall<'s> {
 }
 
 #[derive(Debug)]
-pub enum ExpressionType<'s> {
-    Add(Box<ExpressionType<'s>>, Box<ExpressionType<'s>>),
-    Subtract(Box<ExpressionType<'s>>, Box<ExpressionType<'s>>),
-    Mult(Box<ExpressionType<'s>>, Box<ExpressionType<'s>>),
-    Divide(Box<ExpressionType<'s>>, Box<ExpressionType<'s>>),
-    IntegerDivide(Box<ExpressionType<'s>>, Box<ExpressionType<'s>>),
-    Modulo(Box<ExpressionType<'s>>, Box<ExpressionType<'s>>),
-    Exponent(Box<ExpressionType<'s>>, Box<ExpressionType<'s>>),
-    Negate(Box<ExpressionType<'s>>),
+pub enum Expression<'s> {
+    Add(Box<Expression<'s>>, Box<Expression<'s>>),
+    Subtract(Box<Expression<'s>>, Box<Expression<'s>>),
+    Mult(Box<Expression<'s>>, Box<Expression<'s>>),
+    Divide(Box<Expression<'s>>, Box<Expression<'s>>),
+    IntegerDivide(Box<Expression<'s>>, Box<Expression<'s>>),
+    Modulo(Box<Expression<'s>>, Box<Expression<'s>>),
+    Exponent(Box<Expression<'s>>, Box<Expression<'s>>),
+    Negate(Box<Expression<'s>>),
     FuncCall(FuncCall<'s>)
 }
 
-#[derive(Debug)]
-pub enum StreamParticle<'s> {
-    Filter(Box<Expression<'s>>),
-    Map(Box<Expression<'s>>),
-}
-
-#[derive(Debug)]
-pub struct Expression<'s> {
-    pub et: ExpressionType<'s>,
-    pub streams: Vec<StreamParticle<'s>>
-}
-
 impl<'s> Expression<'s> {
-    fn parse_sum(sum: Pair<'s>) -> Result<ExpressionType, ParseProgramError> {
+    fn parse_sum(sum: Pair<'s>) -> Result<Expression, ParseProgramError> {
         let mut inner = sum.into_inner();
         let mut left = Self::parse_term(
             inner.next().unwrap()
@@ -213,11 +199,11 @@ impl<'s> Expression<'s> {
 
         while let Some(i) = inner.next() {
             left = match i.as_str() {
-                "+" => ExpressionType::Add(
+                "+" => Expression::Add(
                     Box::new(left),
                     Box::new(Self::parse_term(inner.next().unwrap())?)
                 ),
-                "-" => ExpressionType::Subtract(
+                "-" => Expression::Subtract(
                     Box::new(left),
                     Box::new(Self::parse_term(inner.next().unwrap())?)
                 ),
@@ -228,7 +214,7 @@ impl<'s> Expression<'s> {
         Ok(left)
     }
 
-    fn parse_term(term: Pair<'s>) -> Result<ExpressionType, ParseProgramError> {
+    fn parse_term(term: Pair<'s>) -> Result<Expression, ParseProgramError> {
         let mut inner = term.into_inner();
         let mut left = Self::parse_factor(
             inner.next().unwrap()
@@ -236,19 +222,19 @@ impl<'s> Expression<'s> {
 
         while let Some(i) = inner.next() {
             left = match i.as_str() {
-                "*" => ExpressionType::Mult(
+                "*" => Expression::Mult(
                     Box::new(left),
                     Box::new(Self::parse_factor(inner.next().unwrap())?)
                 ),
-                "/" => ExpressionType::Divide(
+                "/" => Expression::Divide(
                     Box::new(left),
                     Box::new(Self::parse_factor(inner.next().unwrap())?)
                 ),
-                "//" => ExpressionType::IntegerDivide(
+                "//" => Expression::IntegerDivide(
                     Box::new(left),
                     Box::new(Self::parse_factor(inner.next().unwrap())?)
                 ),
-                "%" => ExpressionType::Modulo(
+                "%" => Expression::Modulo(
                     Box::new(left),
                     Box::new(Self::parse_factor(inner.next().unwrap())?)
                 ),
@@ -259,7 +245,7 @@ impl<'s> Expression<'s> {
         Ok(left)
     }
 
-    fn parse_factor(factor: Pair<'s>) -> Result<ExpressionType, ParseProgramError> {
+    fn parse_factor(factor: Pair<'s>) -> Result<Expression, ParseProgramError> {
         let mut inner = factor.into_inner();
 
         let next = inner.next().unwrap();
@@ -270,7 +256,7 @@ impl<'s> Expression<'s> {
                 inner.next().unwrap()
             )?,
             "-" => {
-                ExpressionType::Negate(Box::new(Self::parse_factor(
+                Expression::Negate(Box::new(Self::parse_factor(
                     inner.next().unwrap()
                 )?))
             },
@@ -280,10 +266,10 @@ impl<'s> Expression<'s> {
         })
     }
 
-    fn parse_power(factor: Pair<'s>) -> Result<ExpressionType, ParseProgramError> {
+    fn parse_power(factor: Pair<'s>) -> Result<Expression, ParseProgramError> {
         let mut inner = factor.into_inner();
 
-        let left = ExpressionType::FuncCall(FuncCall::parse(
+        let left = Expression::FuncCall(FuncCall::parse(
             inner.next().unwrap()
         )?);
 
@@ -293,32 +279,15 @@ impl<'s> Expression<'s> {
                 inner.next().unwrap()
             )?;
 
-            Ok(ExpressionType::Exponent(Box::new(left), Box::new(right)))
+            Ok(Expression::Exponent(Box::new(left), Box::new(right)))
         } else {
             Ok(left)
         }
 
     }
 
-    fn parse_expr_type(expr: Pair<'s>) -> Result<ExpressionType, ParseProgramError> {
-        Self::parse_sum(expr.into_inner().next().unwrap())
-    }
-
     fn parse_expr(expr: Pair<'s>) -> Result<Self, ParseProgramError> {
-        Ok(Self {
-            et: Self::parse_expr_type(expr)?,
-            streams: vec![],
-        })
-    }
-
-    pub fn parse_extended_expr(expr: Pair<'s>) -> Result<Self, ParseProgramError> {
-        let mut inner = expr.into_inner();
-        let et = Self::parse_expr_type(inner.next().unwrap())?;
-
-        Ok(Self {
-            et,
-            streams: vec![],
-        })
+        Self::parse_sum(expr.into_inner().next().unwrap())
     }
 }
 
@@ -335,7 +304,7 @@ impl<'s> Assignment<'s> {
         let expression = inner.next().unwrap();
 
         let name_string = name.as_str();
-        let expr = Expression::parse_extended_expr(expression)?;
+        let expr = Expression::parse_expr(expression)?;
 
         Ok(Self {
             to: Name::new(name_string),
@@ -357,8 +326,8 @@ impl<'s> Line<'s> {
             Rule::assignment => {
                 Line::Assignment(Assignment::parse(inner)?)
             }
-            Rule::extended_expr => {
-                Line::Expression(Expression::parse_extended_expr(inner)?)
+            Rule::expr => {
+                Line::Expression(Expression::parse_expr(inner)?)
             }
             _ => unreachable!()
         })

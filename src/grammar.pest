@@ -49,27 +49,22 @@ expr = {sum}
 filter = {"~>" ~ expr}
 map = {"|>" ~ expr}
 
-stream_particle = {
-      filter
-    | map
-}
-
-extended_expr = {
-    expr ~ "\n"? ~ stream_particle*
-}
-
-assignment = {name ~ "=" ~ extended_expr}
+assignment = {name ~ "=" ~ expr}
 
 
 line = {
       assignment
-    | extended_expr
+    | expr
+    | block_expr
 }
 
-dir = {"dir" ~ expr ~ block}
+block_expr = {
+    funcdef
+}
 
-block_expr = {dir}
-
+funcdef = {
+    "fn"
+}
 
 block = {"{" ~ inner_program ~ "}"}
 
